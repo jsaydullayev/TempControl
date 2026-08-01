@@ -1,9 +1,0 @@
-
-> tempcontrol@0.1.0 start
-> next start
-
-▲ Next.js 16.2.12
-- Local:         http://localhost:3000
-- Network:       http://26.33.143.146:3000
-✓ Ready in 333ms
-⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
