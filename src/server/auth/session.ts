@@ -1,7 +1,7 @@
 import "server-only";
 
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import type { PrincipalKind } from "@/server/auth/credentials";
 
@@ -55,13 +55,29 @@ export async function readSessionToken(token: string): Promise<SessionPayload | 
   }
 }
 
+/**
+ * `Secure` follows the ACTUAL protocol, not NODE_ENV.
+ *
+ * Keying it to NODE_ENV meant a production container reached over plain HTTP —
+ * by IP, before a domain and certificate exist — set a Secure cookie that the
+ * browser then refuses to store. Login appeared to succeed and every page after
+ * it bounced back to the form, with nothing in any log to explain why.
+ *
+ * nginx passes X-Forwarded-Proto (see deploy/nginx-tempcontrol.conf), so behind
+ * HTTPS the flag comes back on by itself.
+ */
+async function servedOverHttps(): Promise<boolean> {
+  const proto = (await headers()).get("x-forwarded-proto");
+  return proto?.split(",")[0].trim() === "https";
+}
+
 export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   const token = await issueSessionToken(payload);
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await servedOverHttps(),
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   });
