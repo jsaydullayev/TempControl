@@ -147,6 +147,21 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8092/login   # 200
 docker compose -f docker-compose.prod.yml logs -f worker               # poller sikllari
 ```
 
+## 2b. Birinchi siklda ishchi xato beradi — bu normal
+
+`up -d` uchala konteynerni birga ko'taradi, jadvallar esa `drizzle-kit push`
+bilan **keyinroq** yaratiladi. Shu sababli ishchining birinchi sikli
+`cycle failed: ... select ... from "sensors"` deb tugaydi.
+
+Bu o'zi tuzaladi — 5 daqiqadan keyingi sikl normal ishlaydi. Darhol tasdiqlash:
+
+```bash
+docker compose -f docker-compose.prod.yml restart worker
+docker compose -f docker-compose.prod.yml logs --tail=5 worker
+```
+
+Kutilgan: `provider tuya` va `sensors=0 written=0 skipped=0`, xatosiz.
+
 ## 3. nginx
 
 ```bash
