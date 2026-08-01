@@ -6,6 +6,10 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
+# `npm ci` refuses to install unless the lock matches package.json exactly, and
+# a lock generated on Windows omits the linux/musl-only optional packages that
+# Alpine then needs. Regenerate it HERE, not on the dev machine:
+#   docker run --rm -v "<repo>:/app" -w /app node:24-alpine #     npm install --package-lock-only
 RUN npm ci
 
 FROM node:24-alpine AS build
