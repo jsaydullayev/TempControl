@@ -6,18 +6,28 @@
  * It queries the tables directly rather than importing the auth module — that
  * one is marked `server-only` and belongs to the app process alone.
  *
- *   npm run check:login
+ *   npm run check:login -- <login> <parol>
+ *
+ * The pair is passed in rather than hardcoded: seed passwords are generated
+ * now, so a fixed list here could only ever be stale — or a published password.
  */
 import { Pool } from "pg";
 
 import { verifyPassword } from "../src/server/auth/password";
 
+const [login, password] = process.argv.slice(2);
+
+if (!login || !password) {
+  console.error("Usage: npm run check:login -- <login> <parol>");
+  process.exit(1);
+}
+
+// The wrong-password and unknown-login cases are derived, so a single pair
+// still proves the whole path: accept, reject, and not-found.
 const CASES: [string, string, boolean][] = [
-  ["markaziy", "markaziy2026", true],
-  ["korpus", "korpus2026", true],
-  ["admin", "admin2026", true],
-  ["markaziy", "wrong-password", false],
-  ["nobody", "whatever", false],
+  [login, password, true],
+  [login, `${password}-wrong`, false],
+  ["definitely-not-a-real-login", password, false],
 ];
 
 async function main() {

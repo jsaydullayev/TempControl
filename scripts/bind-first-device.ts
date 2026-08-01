@@ -7,6 +7,7 @@
  *
  * Names are placeholders; rename them in /admin/structure afterwards.
  */
+import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq } from "drizzle-orm";
@@ -15,7 +16,14 @@ import * as schema from "../src/db/schema";
 import { hashPassword } from "../src/server/auth/password";
 import { getProvider } from "../src/server/providers";
 
-const BUILDING = { name: "Sinov binosi", slug: "sinov", login: "sinov", password: "sinov2026" };
+// Generated, not written here — a constant in a public repository is a
+// published password. Printed once at the end of the run.
+const BUILDING = {
+  name: "Sinov binosi",
+  slug: "sinov",
+  login: "sinov",
+  password: process.env.SEED_PASSWORD ?? `dev-${randomBytes(9).toString("base64url")}`,
+};
 const FLOOR = "1-qavat";
 const DEPARTMENT = "Sinov bo'limi";
 const ROOM = "Sinov xonasi";

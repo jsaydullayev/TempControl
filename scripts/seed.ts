@@ -4,16 +4,32 @@
  *
  * Safe to re-run: it does nothing if buildings already exist.
  */
+import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 
 import * as schema from "../src/db/schema";
 import { hashPassword } from "../src/server/auth/password";
 
+/**
+ * Passwords are generated, not written here.
+ *
+ * They used to be constants — `admin2026` and friends — which is fine until the
+ * repository is public, and then the project's default admin password is a
+ * published fact. Generating them keeps this script zero-setup for local work
+ * while nothing quotable ends up in the source.
+ *
+ * Set SEED_PASSWORD to pin one instead, e.g. when re-running against the same
+ * database. Production does not use this script at all — see create-admin.ts.
+ */
+function newPassword(): string {
+  return process.env.SEED_PASSWORD ?? `dev-${randomBytes(9).toString("base64url")}`;
+}
+
 const CREDENTIALS = {
-  admin: { login: "admin", password: "admin2026" },
-  markaziy: { login: "markaziy", password: "markaziy2026" },
-  korpus: { login: "korpus", password: "korpus2026" },
+  admin: { login: "admin", password: newPassword() },
+  markaziy: { login: "markaziy", password: newPassword() },
+  korpus: { login: "korpus", password: newPassword() },
 };
 
 interface RoomSeed {
@@ -171,7 +187,12 @@ async function main() {
   await seedBuilding(db, "Markaziy bino", "markaziy", CREDENTIALS.markaziy, MARKAZIY);
   await seedBuilding(db, "Ishlab chiqarish korpusi", "korpus", CREDENTIALS.korpus, KORPUS);
 
-  console.log("Seeded 1 admin, 2 buildings, 5 floors, 8 departments, 15 rooms, 20 sensors.");
+  console.log("Seeded 1 admin, 2 buildings, 5 floors, 8 departments, 15 rooms, 20 sensors.\n");
+  // Printed once, and nowhere else: the hashes are all the database keeps.
+  for (const [key, c] of Object.entries(CREDENTIALS)) {
+    console.log(`  ${key.padEnd(9)} ${c.login.padEnd(10)} ${c.password}`);
+  }
+  console.log("\nSave these — they cannot be recovered.");
   await pool.end();
 }
 
