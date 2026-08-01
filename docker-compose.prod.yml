@@ -1,0 +1,69 @@
+# Production stack for the VPS: app + database + ingest worker.
+#
+# The server already runs strotech.uz and parizodam.uz behind the host nginx.
+# Nothing here touches :80 or :443 — the app listens on a loopback port and the
+# host nginx proxies to it. NEVER stop nginx on that machine; reload it.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tempcontrol-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tempcontrol
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: tempcontrol
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tempcontrol -d tempcontrol"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    # No ports: the database is reachable only from the other containers.
+
+  app:
+    build: .
+    container_name: tempcontrol-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://tempcontrol:${POSTGRES_PASSWORD}@db:5432/tempcontrol
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      PROVIDER: ${PROVIDER:-mock}
+      TUYA_ACCESS_ID: ${TUYA_ACCESS_ID:-}
+      TUYA_ACCESS_SECRET: ${TUYA_ACCESS_SECRET:-}
+      TUYA_BASE_URL: ${TUYA_BASE_URL:-}
+      NODE_ENV: production
+    ports:
+      # Loopback only — the host nginx is the single public entry point.
+      #
+      # 8092 because that machine already runs other stacks. Taken as of
+      # 2026-08-01: 8080 market-system-api, 8081 market-system-client,
+      # 8091 r-app, 8095 + 8455 buildix-web. Confirm before changing:
+      #   ss -ltnp | grep -E '80[0-9]{2}|84[0-9]{2}'
+      - "127.0.0.1:8092:3000"
+
+  worker:
+    build: .
+    container_name: tempcontrol-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://tempcontrol:${POSTGRES_PASSWORD}@db:5432/tempcontrol
+      PROVIDER: ${PROVIDER:-mock}
+      TUYA_ACCESS_ID: ${TUYA_ACCESS_ID:-}
+      TUYA_ACCESS_SECRET: ${TUYA_ACCESS_SECRET:-}
+      TUYA_BASE_URL: ${TUYA_BASE_URL:-}
+      POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-300}
+      NODE_ENV: production
+    # A separate process on purpose: a timer inside Next.js would run once per
+    # instance and write every reading several times.
+    command: ["npx", "tsx", "worker/poller.ts"]
+
+volumes:
+  db-data:

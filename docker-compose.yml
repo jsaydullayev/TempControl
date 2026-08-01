@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tempcontrol-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tempcontrol
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tempcontrol}
+      POSTGRES_DB: tempcontrol
+    ports:
+      # Bound to localhost only — the database is never exposed to the network.
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tempcontrol -d tempcontrol"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:

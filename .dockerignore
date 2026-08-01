@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.env
+.env.local
+*.log
+Design
+drizzle
+README.md
+PLAN.md
+ROADMAP.md
+UI-DESIGN.md
+FRONTEND-BRIEF.md

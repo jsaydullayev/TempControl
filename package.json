@@ -1,0 +1,49 @@
+{
+  "name": "tempcontrol",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:up": "docker compose up -d db",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "db:studio": "drizzle-kit studio",
+    "verify:sign": "tsx scripts/verify-tuya-sign.ts",
+    "tuya:test": "tsx --env-file=.env.local scripts/tuya-test.ts",
+    "worker": "tsx --env-file=.env.local worker/poller.ts",
+    "check:login": "tsx --env-file=.env.local scripts/check-login.ts",
+    "db:reset": "tsx --env-file=.env.local scripts/reset-data.ts",
+    "create-admin": "tsx --env-file=.env.local scripts/create-admin.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.5",
+    "lucide-react": "^1.28.0",
+    "next": "16.2.12",
+    "next-intl": "^4.13.4",
+    "pg": "^8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.10.1",
+    "swr": "^2.4.2",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
+  }
+}
