@@ -134,6 +134,7 @@ export async function listSensorStates(
       roomId: sensors.roomId,
       tempOffset: sensors.tempOffset,
       humOffset: sensors.humOffset,
+      lastSeenAt: sensors.lastSeenAt,
     })
     .from(sensors)
     .innerJoin(rooms, eq(rooms.id, sensors.roomId))
@@ -155,6 +156,7 @@ export async function getSensorState(session: Session, sensorId: string): Promis
       roomId: sensors.roomId,
       tempOffset: sensors.tempOffset,
       humOffset: sensors.humOffset,
+      lastSeenAt: sensors.lastSeenAt,
     })
     .from(sensors)
     .where(and(eq(sensors.id, sensorId), eq(sensors.isActive, true)))
@@ -218,6 +220,7 @@ type SensorRow = {
   roomId: string | null;
   tempOffset: number;
   humOffset: number;
+  lastSeenAt: Date | null;
 };
 
 /**
@@ -302,11 +305,24 @@ async function buildStates(rows: SensorRow[]): Promise<SensorState[]> {
       isActive: true,
     };
 
+    /*
+     * Last CONTACT, not the timestamp of the last stored row.
+     *
+     * The poller deliberately skips writing a reading whose value has not
+     * moved, so a healthy sensor sitting at a steady temperature can have its
+     * newest row be half an hour old while it has been answering all along.
+     * Using the row's timestamp reported "25 minutes ago" for a device that had
+     * replied two minutes earlier — and, on the same 30-minute threshold, would
+     * eventually have declared it offline while the alert engine (which reads
+     * last_seen_at) still considered it perfectly alive.
+     */
+    const contactAt = row.lastSeenAt?.getTime() ?? reading?.ts ?? null;
+
     return {
       sensor,
       latest: reading,
-      lastSeen: reading?.ts ?? null,
-      isOnline: !isOffline(reading?.ts ?? null, now),
+      lastSeen: contactAt,
+      isOnline: !isOffline(contactAt, now),
       spark: spark.get(row.id) ?? [],
     };
   });
