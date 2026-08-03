@@ -66,12 +66,17 @@ cat -A /opt/tempcontrol/.env | grep TUYA
 ```
 
 Har qator faqat `$` bilan tugashi kerak. **`^M$`** ko'rsangiz — Windows'ning
-`` belgisi qiymat ichida qolgan. Kalit `...c479` bo'lib qoladi, imzo
-hech qachon to'g'ri chiqmaydi va Tuya abadiy `sign invalid` beradi:
+karetka qaytarish belgisi qiymat ichida qolgan. Kalit ko'rinmas belgi bilan
+tugaydi, imzo hech qachon to'g'ri chiqmaydi va Tuya abadiy `sign invalid`
+beradi — xato matnida esa bunga hech qanday ishora bo'lmaydi:
 
 ```bash
-sed -i 's/$//' /opt/tempcontrol/.env
+sed -i 's/\r$//' /opt/tempcontrol/.env
+cat -A /opt/tempcontrol/.env | grep TUYA
 ```
+
+Ilova kalitlarni o'qiyotganda ham ularni kesadi, shuning uchun yangi
+o'rnatishlarda bu qaytarilmaydi — lekin `.env` toza bo'lgani ma'qul.
 
 Eski `.env.example` dagi qiymatlar (ma'lumot uchun):
 
