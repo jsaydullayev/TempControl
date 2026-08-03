@@ -50,7 +50,24 @@ function canonicalQuery(query: SignInput["query"]): string {
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
   if (entries.length === 0) return "";
-  return entries.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+  return entries.map(([k, v]) => `${k}=${encodeQueryValue(v)}`).join("&");
+}
+
+/**
+ * Percent-encodes a query value the way Tuya's own SDKs do — which is to say,
+ * leaving the comma alone.
+ *
+ * Tuya computes the expected signature over the DECODED query, so a `,` sent as
+ * `%2C` signs one string and is verified against another: error 1004, "sign
+ * invalid". The comma only appears in multi-value parameters — `device_ids=a,b`
+ * — so a single sensor worked perfectly and adding the second one broke every
+ * reading, which points suspicion at the new device instead of at the encoding.
+ *
+ * A comma is a legal sub-delimiter in a query string (RFC 3986), so sending it
+ * raw is correct HTTP as well.
+ */
+function encodeQueryValue(value: string): string {
+  return encodeURIComponent(value).replace(/%2C/gi, ",");
 }
 
 export function signRequest(input: SignInput): SignedRequest {

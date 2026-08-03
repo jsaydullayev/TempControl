@@ -101,6 +101,22 @@ check(
     createHash("sha256").update('{"a":1}').digest("hex"),
 );
 
+// 7b. A comma in a multi-value parameter must reach the wire RAW. Encoding it
+// as %2C signs a different string than Tuya verifies, and the only symptom is
+// "sign invalid" the moment a second device id joins the request.
+const multi = signRequest({
+  baseUrl: BASE,
+  method: "GET",
+  path: "/v1.0/iot-03/devices/status",
+  query: { device_ids: "aaa,bbb" },
+  clientId: CID,
+  clientSecret: SECRET,
+  accessToken: "tok",
+  now: T,
+});
+check("comma in query is not percent-encoded", !multi.url.includes("%2C"), multi.url);
+check("comma reaches the url raw", multi.url.includes("device_ids=aaa,bbb"), multi.url);
+
 // 8. Timestamp is the 13-digit millisecond value, as a string.
 check("t is 13-digit ms string", token.headers.t === String(T), token.headers.t);
 
