@@ -100,6 +100,20 @@ export async function pollOnce(): Promise<PollResult> {
     await db.update(sensors).set({ lastSeenAt: s.at }).where(eq(sensors.id, s.id));
   }
 
+  /*
+   * Name the sensors the provider said nothing about.
+   *
+   * A device whose data points we cannot read returns no reading at all, and
+   * without this the only symptom is a sensor that sits at "never" forever
+   * while the admin panel cheerfully lists it as online. Saying which id was
+   * missed turns a mystery into a lookup.
+   */
+  const answered = new Set(latest.map((r) => r.sensorId));
+  const silent = active.filter((s) => !answered.has(s.externalId));
+  if (silent.length > 0) {
+    result.errors.push(`no reading for: ${silent.map((s) => s.externalId).join(", ")}`);
+  }
+
   return result;
 }
 

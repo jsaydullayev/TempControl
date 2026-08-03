@@ -90,9 +90,22 @@ export class TuyaProvider implements SensorProvider {
       });
 
       for (const row of rows ?? []) {
-        const spec = await this.specOf(row.id);
-        const reading = this.toReading(row.id, row.status ?? [], spec, now);
-        if (reading) readings.push(reading);
+        /*
+         * One device must not be able to silence the others.
+         *
+         * The specification is fetched per device, and a device the account
+         * cannot read — or one whose spec call simply fails — used to throw out
+         * of here and abort the entire cycle. Binding a single unsupported
+         * sensor then stopped readings for every sensor in every building, and
+         * the only visible symptom was that the numbers quietly stopped moving.
+         */
+        try {
+          const spec = await this.specOf(row.id);
+          const reading = this.toReading(row.id, row.status ?? [], spec, now);
+          if (reading) readings.push(reading);
+        } catch (error) {
+          console.error(`[tuya] device ${row.id} skipped: ${String(error)}`);
+        }
       }
     }
 
