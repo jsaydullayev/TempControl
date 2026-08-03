@@ -4,12 +4,16 @@ import { requestNow } from "@/lib/now";
 import { relativeTimeParts } from "@/lib/format";
 import type { Severity } from "@/lib/types";
 import type { AlertItem } from "@/components/alerts/alert-bell";
+import { AutoRefresh } from "@/components/layout/auto-refresh";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar, type NavItem } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { requireSession, visibleBuildings } from "@/server/auth/dal";
 import { bellAlerts, unseenCount } from "@/server/dal/alerts";
 import { currentBuildingIdOrNull } from "@/server/dal/view-selection";
+
+/** Reads the DATABASE on each tick — no Tuya call, so no quota cost. */
+const REFRESH_SECONDS = 60;
 
 const SEVERITY_COLOR: Record<Severity, string> = {
   good: "var(--status-good)",
@@ -92,6 +96,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
 
       <MobileNav items={items} alertsLabel={t("nav.alerts")} unseen={unseen} />
+
+      {/* Half the poll interval, so a new reading reaches the screen within
+          roughly one refresh of being stored. */}
+      <AutoRefresh seconds={REFRESH_SECONDS} />
     </div>
   );
 }

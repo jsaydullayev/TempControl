@@ -63,7 +63,7 @@ services:
       TUYA_ACCESS_ID: ${TUYA_ACCESS_ID:-}
       TUYA_ACCESS_SECRET: ${TUYA_ACCESS_SECRET:-}
       TUYA_BASE_URL: ${TUYA_BASE_URL:-}
-      POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-300}
+      POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-180}
       NODE_ENV: production
     # A separate process on purpose: a timer inside Next.js would run once per
     # instance and write every reading several times.

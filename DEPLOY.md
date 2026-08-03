@@ -40,7 +40,7 @@ POSTGRES_PASSWORD=$(openssl rand -base64 36 | tr -dc 'A-Za-z0-9' | head -c 40)
 SESSION_SECRET=$(openssl rand -base64 48)
 PROVIDER=tuya
 TUYA_BASE_URL=https://openapi.tuyaeu.com
-POLL_INTERVAL_SEC=300
+POLL_INTERVAL_SEC=180
 EOF
 chmod 600 .env
 ```
@@ -74,7 +74,7 @@ TUYA_ACCESS_ID=<Tuya Cloud loyihasidan>
 TUYA_ACCESS_SECRET=<Tuya Cloud loyihasidan>
 TUYA_BASE_URL=https://openapi.tuyaeu.com
 TUYA_UID=<Link App Account dagi UID>
-POLL_INTERVAL_SEC=300
+POLL_INTERVAL_SEC=180
 ```
 
 `PROVIDER=mock` qoldirilsa ilova soxta ma'lumot ko'rsatadi va buni hech qayerda

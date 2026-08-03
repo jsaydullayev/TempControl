@@ -10,7 +10,7 @@
 import { evaluateAll } from "../src/server/alerts/evaluate";
 import { pollOnce, trimOldReadings, RETENTION_DAYS } from "../src/server/ingest/poll";
 
-const INTERVAL_MS = Number(process.env.POLL_INTERVAL_SEC ?? 300) * 1000;
+const INTERVAL_MS = Number(process.env.POLL_INTERVAL_SEC ?? 180) * 1000;
 const TRIM_EVERY_MS = 24 * 60 * 60 * 1000;
 
 let stopping = false;
