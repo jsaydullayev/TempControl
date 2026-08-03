@@ -27,7 +27,7 @@ export class TuyaError extends Error {
 /** The failure modes that are worth naming, because the fix differs for each. */
 const HINTS: Record<string, string> = {
   "1001": "Access Secret noto'g'ri.",
-  "1004": "Imzo xato — Access ID/Secret yoki region noto'g'ri bo'lishi mumkin.",
+  "1004": "Imzo xato — token eskirgan (qayta olinadi) yoki Access Secret/region noto'g'ri.",
   "1010": "Token yaroqsiz — qayta olinadi.",
   "1013": "Server soati Tuya bilan mos emas (timestamp farqi).",
   "1106": "Ruxsat yo'q — Smart Life ilovasi QR kod orqali loyihaga bog'lanmagan.",
@@ -197,6 +197,22 @@ async function accessToken(config: TuyaConfig): Promise<string> {
   }
 }
 
+/**
+ * Errors that mean "your token is no longer the current one" rather than
+ * "your credentials are wrong". Both are worth one retry with a fresh token.
+ *
+ * 1004 belongs here because Tuya issues ONE live token per credential: the
+ * moment any process asks for a new one, every other process's token stops
+ * signing. In production the app and the worker share the same Access ID, so
+ * opening the admin panel silently killed the poller's token and every cycle
+ * after it failed with "sign invalid" — the readings simply stopped, with the
+ * Tuya app still showing perfect data because nothing was wrong at the device.
+ *
+ * Single-flighting only fixes the race inside one process; across processes the
+ * only workable answer is to notice and re-authenticate.
+ */
+const STALE_TOKEN_CODES = new Set(["1010", "1004"]);
+
 /** Authenticated request. Retries once on an invalid-token error. */
 export async function tuyaRequest<T>(
   config: TuyaConfig,
@@ -212,7 +228,9 @@ export async function tuyaRequest<T>(
   try {
     return await call<T>(config, { ...init, accessToken: token });
   } catch (error) {
-    if (error instanceof TuyaError && String(error.code) === "1010") {
+    if (error instanceof TuyaError && STALE_TOKEN_CODES.has(String(error.code))) {
+      // Drop it so the retry fetches a brand-new token rather than refreshing
+      // one the server has already forgotten.
       tokens.delete(cacheKey(config));
       const retryToken = await accessToken(config);
       return call<T>(config, { ...init, accessToken: retryToken });
