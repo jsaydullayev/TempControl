@@ -58,10 +58,19 @@ grep -E '^TUYA_(ACCESS_ID|ACCESS_SECRET|UID)=' .env.local \
   | ssh root@158.220.123.53 'cat >> /opt/tempcontrol/.env'
 ```
 
-Tekshiring — 8 qator bo'lishi kerak, kalitlar to'ldirilgan:
+Tekshiring — 8 qator, va qator oxirlari **toza**:
 
 ```bash
 grep -c . /opt/tempcontrol/.env
+cat -A /opt/tempcontrol/.env | grep TUYA
+```
+
+Har qator faqat `$` bilan tugashi kerak. **`^M$`** ko'rsangiz — Windows'ning
+`` belgisi qiymat ichida qolgan. Kalit `...c479` bo'lib qoladi, imzo
+hech qachon to'g'ri chiqmaydi va Tuya abadiy `sign invalid` beradi:
+
+```bash
+sed -i 's/$//' /opt/tempcontrol/.env
 ```
 
 Eski `.env.example` dagi qiymatlar (ma'lumot uchun):

@@ -239,14 +239,22 @@ export async function tuyaRequest<T>(
   }
 }
 
-/** Reads credentials from the environment; null when they are not configured. */
+/**
+ * Reads credentials from the environment; null when they are not configured.
+ *
+ * Every value is TRIMMED. A `.env` written on Windows ends its lines with
+ * CR+LF, and piping those lines to a Linux server leaves a carriage return
+ * inside the value: the secret becomes "…c479\r", every signature is computed
+ * over the wrong key, and Tuya answers "sign invalid" forever. Nothing in that
+ * error points at an invisible character, so the cause is removed here instead.
+ */
 export function tuyaConfigFromEnv(): TuyaConfig | null {
-  const clientId = process.env.TUYA_ACCESS_ID;
-  const clientSecret = process.env.TUYA_ACCESS_SECRET;
-  const baseUrl = process.env.TUYA_BASE_URL;
+  const clientId = process.env.TUYA_ACCESS_ID?.trim();
+  const clientSecret = process.env.TUYA_ACCESS_SECRET?.trim();
+  const baseUrl = process.env.TUYA_BASE_URL?.trim().replace(/\/+$/, "");
 
   if (!clientId || !clientSecret || !baseUrl) return null;
-  return { clientId, clientSecret, baseUrl, uid: process.env.TUYA_UID || undefined };
+  return { clientId, clientSecret, baseUrl, uid: process.env.TUYA_UID?.trim() || undefined };
 }
 
 /** Drops the cached token — used after credentials change. */
