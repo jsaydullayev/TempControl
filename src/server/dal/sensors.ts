@@ -132,8 +132,6 @@ export async function listSensorStates(
       name: sensors.name,
       buildingId: sensors.buildingId,
       roomId: sensors.roomId,
-      tempOffset: sensors.tempOffset,
-      humOffset: sensors.humOffset,
       lastSeenAt: sensors.lastSeenAt,
     })
     .from(sensors)
@@ -154,8 +152,6 @@ export async function getSensorState(session: Session, sensorId: string): Promis
       name: sensors.name,
       buildingId: sensors.buildingId,
       roomId: sensors.roomId,
-      tempOffset: sensors.tempOffset,
-      humOffset: sensors.humOffset,
       lastSeenAt: sensors.lastSeenAt,
     })
     .from(sensors)
@@ -218,8 +214,6 @@ type SensorRow = {
   name: string;
   buildingId: string;
   roomId: string | null;
-  tempOffset: number;
-  humOffset: number;
   lastSeenAt: Date | null;
 };
 

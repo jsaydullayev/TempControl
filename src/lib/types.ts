@@ -83,8 +83,11 @@ export const DEFAULT_LOCALE: Locale = "uz";
 
 /** Comfort bands. Used for status chips and chart threshold bands alike. */
 export const DEFAULT_THRESHOLDS: Record<Metric, Threshold> = {
-  temp: { metric: "temp", min: 18, max: 26, hysteresis: 0.5 },
-  hum: { metric: "hum", min: 30, max: 60, hysteresis: 2 },
+  // Hysteresis 0: the limit is the limit. A tenth of a degree past it is an
+  // excursion, and for medicine storage an excursion is exactly what has to be
+  // seen — not smoothed away by a deadband.
+  temp: { metric: "temp", min: 18, max: 26, hysteresis: 0 },
+  hum: { metric: "hum", min: 30, max: 60, hysteresis: 0 },
 };
 
 /** A sensor is considered offline after this long without a report. */

@@ -183,18 +183,10 @@ function RuleForm({
 
       <Num name="min" label={`${t("admin.min")} ${unit}`} value={row?.minValue ?? base.minValue} />
       <Num name="max" label={`${t("admin.max")} ${unit}`} value={row?.maxValue ?? base.maxValue} />
-      <Num
-        name="hysteresis"
-        label={t("admin.hysteresis")}
-        value={row?.hysteresis ?? base.hysteresis}
-        step={0.1}
-      />
-      <Num
-        name="sustainMinutes"
-        label={t("admin.sustain")}
-        value={row?.sustainMinutes ?? base.sustainMinutes}
-        step={1}
-      />
+      {/* No deadband, no wait: a reading past the limit alerts on the spot.
+          Both are still sent so the server keeps writing zeroes into them. */}
+      <input type="hidden" name="hysteresis" value="0" />
+      <input type="hidden" name="sustainMinutes" value="0" />
 
       <button
         type="submit"

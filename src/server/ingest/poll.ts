@@ -33,7 +33,7 @@ export async function pollOnce(): Promise<PollResult> {
   const result: PollResult = { sensors: 0, written: 0, skipped: 0, errors: [] };
 
   const active = await db
-    .select({ id: sensors.id, externalId: sensors.externalId, tempOffset: sensors.tempOffset, humOffset: sensors.humOffset })
+    .select({ id: sensors.id, externalId: sensors.externalId })
     .from(sensors)
     .where(eq(sensors.isActive, true));
 
@@ -62,8 +62,11 @@ export async function pollOnce(): Promise<PollResult> {
     const sensor = byExternal.get(reading.sensorId);
     if (!sensor) continue;
 
-    const tempC = round1(reading.tempC + sensor.tempOffset);
-    const humidity = Math.round(reading.humidity + sensor.humOffset);
+    // Stored exactly as the device reported it. There is no calibration step:
+    // a sensor sits in a room or in a fridge, and a number the operator cannot
+    // trace back to the device is worse than one that is slightly off.
+    const tempC = round1(reading.tempC);
+    const humidity = Math.round(reading.humidity);
     const at = new Date(reading.ts);
 
     seen.push({ id: sensor.id, at });

@@ -183,25 +183,12 @@ export default async function AdminSensorsPage() {
               </p>
 
               <div className="flex flex-wrap items-end gap-2">
-                {/* Name and calibration in one row: an offset is only ever set
-                    while looking at the sensor it belongs to. */}
+                {/* Name only. Readings are stored exactly as the device
+                    reports them — a corrected number nobody can trace back to
+                    the hardware is worse than a slightly imperfect one. */}
                 <form action={updateSensorAction} className="flex flex-wrap items-end gap-2">
                   <input type="hidden" name="id" value={sensor.id} />
-                  <Field name="name" label={t("sensors.name")} defaultValue={sensor.name} width={190} />
-                  <Field
-                    name="tempOffset"
-                    label={`${t("admin.offset")} °C`}
-                    defaultValue={String(sensor.tempOffset ?? 0)}
-                    width={96}
-                    numeric
-                  />
-                  <Field
-                    name="humOffset"
-                    label={`${t("admin.offset")} %`}
-                    defaultValue={String(sensor.humOffset ?? 0)}
-                    width={96}
-                    numeric
-                  />
+                  <Field name="name" label={t("sensors.name")} defaultValue={sensor.name} width={240} />
                   <button
                     type="submit"
                     className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm"
@@ -237,13 +224,11 @@ function Field({
   label,
   defaultValue,
   width,
-  numeric,
 }: {
   name: string;
   label: string;
   defaultValue: string;
   width: number;
-  numeric?: boolean;
 }) {
   return (
     <label className="flex flex-col gap-1">
@@ -253,10 +238,9 @@ function Field({
       <input
         name={name}
         defaultValue={defaultValue}
-        type={numeric ? "number" : "text"}
-        step={numeric ? 0.1 : undefined}
+        type="text"
         required
-        className={`h-9 rounded-lg px-2.5 text-sm outline-none ${numeric ? "tnum" : ""}`}
+        className="h-9 rounded-lg px-2.5 text-sm outline-none"
         style={{
           width,
           background: "var(--surface-2)",

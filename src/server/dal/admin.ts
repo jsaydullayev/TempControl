@@ -316,8 +316,6 @@ export async function sensorsInRooms(roomIds: string[]) {
       roomId: sensors.roomId,
       name: sensors.name,
       externalId: sensors.externalId,
-      tempOffset: sensors.tempOffset,
-      humOffset: sensors.humOffset,
     })
     .from(sensors)
     .where(and(inArray(sensors.roomId, roomIds), eq(sensors.isActive, true)))
@@ -513,20 +511,17 @@ export async function setBuildingActive(buildingId: string, isActive: boolean) {
 export async function updateSensor(input: {
   id: string;
   name: string;
-  tempOffset: number;
-  humOffset: number;
+
 }) {
   const session = await requireAdmin();
 
   await db
     .update(sensors)
-    .set({ name: input.name, tempOffset: input.tempOffset, humOffset: input.humOffset })
+    .set({ name: input.name })
     .where(eq(sensors.id, input.id));
 
   await record(session, "update", "sensor", input.id, {
     name: input.name,
-    tempOffset: input.tempOffset,
-    humOffset: input.humOffset,
   });
 }
 

@@ -108,9 +108,6 @@ export const sensors = pgTable(
     provider: text("provider").notNull().default("mock"),
     isActive: boolean("is_active").notNull().default(true),
 
-    /** Calibration applied after normalisation. */
-    tempOffset: doublePrecision("temp_offset").notNull().default(0),
-    humOffset: doublePrecision("hum_offset").notNull().default(0),
 
     /**
      * Cached Tuya device specification. The scale is an EXPONENT and differs per
@@ -169,10 +166,14 @@ export const thresholds = pgTable(
     metric: text("metric").notNull(),
     minValue: doublePrecision("min_value").notNull(),
     maxValue: doublePrecision("max_value").notNull(),
-    /** Deadband outside min/max before a breach opens — stops flapping. */
-    hysteresis: doublePrecision("hysteresis").notNull().default(0.5),
-    /** The breach must hold this long before an alert opens. */
-    sustainMinutes: smallint("sustain_minutes").notNull().default(10),
+    /*
+     * Both default to ZERO: a reading outside min/max raises the alert on the
+     * spot. Medicine and vaccine storage is the use case here — an excursion
+     * that is real for one reading is still an excursion, and a delay that
+     * hides it is worse than an alert that reopens.
+     */
+    hysteresis: doublePrecision("hysteresis").notNull().default(0),
+    sustainMinutes: smallint("sustain_minutes").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

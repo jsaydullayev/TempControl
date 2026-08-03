@@ -19,7 +19,8 @@ export interface Rule {
   sustainMinutes: number;
 }
 
-export const DEFAULT_SUSTAIN_MINUTES = 10;
+/** Zero: an alert opens on the first reading past the limit, not minutes later. */
+export const DEFAULT_SUSTAIN_MINUTES = 0;
 
 export function defaultRule(metric: Metric): Rule {
   const base = DEFAULT_THRESHOLDS[metric];
@@ -34,13 +35,21 @@ export function defaultRule(metric: Metric): Rule {
 
 export type RuleSet = Record<Metric, Rule>;
 
+/*
+ * Only min and max are read from the row.
+ *
+ * The deadband and the wait are forced to zero rather than taken from the
+ * database: rows written before this rule existed still hold 0.5 and 10, and
+ * honouring them would quietly delay the very alerts that must be immediate.
+ * The columns stay so the history reads back, but nothing consults them.
+ */
 function toRule(row: typeof thresholds.$inferSelect): Rule {
   return {
     metric: row.metric as Metric,
     min: row.minValue,
     max: row.maxValue,
-    hysteresis: row.hysteresis,
-    sustainMinutes: row.sustainMinutes,
+    hysteresis: 0,
+    sustainMinutes: 0,
   };
 }
 

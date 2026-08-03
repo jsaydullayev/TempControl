@@ -223,14 +223,10 @@ export async function updateSensorAction(formData: FormData) {
     .object({
       id,
       name,
-      tempOffset: z.coerce.number().min(-20).max(20),
-      humOffset: z.coerce.number().min(-40).max(40),
     })
     .safeParse({
       id: formData.get("id"),
       name: formData.get("name"),
-      tempOffset: formData.get("tempOffset"),
-      humOffset: formData.get("humOffset"),
     });
   if (!parsed.success) return;
 
