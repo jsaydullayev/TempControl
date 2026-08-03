@@ -10,6 +10,13 @@ import { DEFAULT_SUSTAIN_MINUTES } from "@/server/alerts/rules";
 import { currentBuildingId } from "@/server/dal/view-selection";
 import { clearThresholdAction, saveThresholdAction } from "@/app/(app)/admin/actions";
 
+interface Rule {
+  minValue: number;
+  maxValue: number;
+  hysteresis: number;
+  sustainMinutes: number;
+}
+
 /**
  * Threshold editor: building defaults, plus a per-sensor override where one
  * room genuinely differs (a fridge does not want the office's limits).
@@ -38,6 +45,26 @@ export default async function ThresholdsPage() {
 
   const find = (scope: string, scopeId: string, metric: Metric) =>
     rows.find((r) => r.scope === scope && r.scopeId === scopeId && r.metric === metric);
+
+  /**
+   * What a sensor WITHOUT an override actually obeys — the building's rule, or
+   * the application default when the building has none either.
+   *
+   * The per-sensor forms must start from this, not from the application default.
+   * Otherwise a building set to 20–24 shows 18–26 beside every sensor, and an
+   * admin who presses Save on one of them silently widens that sensor's limits
+   * while believing they changed nothing.
+   */
+  const inherited = (metric: Metric) => {
+    const row = find("building", buildingId, metric);
+    const base = DEFAULT_THRESHOLDS[metric];
+    return {
+      minValue: row?.minValue ?? base.min,
+      maxValue: row?.maxValue ?? base.max,
+      hysteresis: row?.hysteresis ?? base.hysteresis,
+      sustainMinutes: row?.sustainMinutes ?? DEFAULT_SUSTAIN_MINUTES,
+    };
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -101,6 +128,7 @@ export default async function ThresholdsPage() {
                   scope="sensor"
                   scopeId={sensor.id}
                   row={find("sensor", sensor.id, metric)}
+                  fallback={inherited(metric)}
                   t={t}
                   compact
                 />
@@ -118,17 +146,25 @@ function RuleForm({
   scope,
   scopeId,
   row,
+  fallback,
   t,
   compact,
 }: {
   metric: Metric;
   scope: "building" | "sensor";
   scopeId: string;
-  row?: { minValue: number; maxValue: number; hysteresis: number; sustainMinutes: number };
+  row?: Rule;
+  /** Shown when there is no own rule — what this scope currently inherits. */
+  fallback?: Rule;
   t: Awaited<ReturnType<typeof getTranslations>>;
   compact?: boolean;
 }) {
-  const base = DEFAULT_THRESHOLDS[metric];
+  const base = fallback ?? {
+    minValue: DEFAULT_THRESHOLDS[metric].min,
+    maxValue: DEFAULT_THRESHOLDS[metric].max,
+    hysteresis: DEFAULT_THRESHOLDS[metric].hysteresis,
+    sustainMinutes: DEFAULT_SUSTAIN_MINUTES,
+  };
   const unit = metric === "temp" ? "°C" : "%";
   const isSet = Boolean(row);
 
@@ -145,8 +181,8 @@ function RuleForm({
         {t(metric === "temp" ? "sensors.temperature" : "sensors.humidity")}
       </span>
 
-      <Num name="min" label={`${t("admin.min")} ${unit}`} value={row?.minValue ?? base.min} />
-      <Num name="max" label={`${t("admin.max")} ${unit}`} value={row?.maxValue ?? base.max} />
+      <Num name="min" label={`${t("admin.min")} ${unit}`} value={row?.minValue ?? base.minValue} />
+      <Num name="max" label={`${t("admin.max")} ${unit}`} value={row?.maxValue ?? base.maxValue} />
       <Num
         name="hysteresis"
         label={t("admin.hysteresis")}
@@ -156,7 +192,7 @@ function RuleForm({
       <Num
         name="sustainMinutes"
         label={t("admin.sustain")}
-        value={row?.sustainMinutes ?? DEFAULT_SUSTAIN_MINUTES}
+        value={row?.sustainMinutes ?? base.sustainMinutes}
         step={1}
       />
 
