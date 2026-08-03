@@ -36,8 +36,8 @@ export function summariseSensor(state: SensorState): SensorStatusSummary {
     };
   }
 
-  const temp = evaluateMetric("temp", state.latest.tempC);
-  const hum = evaluateMetric("hum", state.latest.humidity);
+  const temp = evaluateMetric("temp", state.latest.tempC, state.thresholds.temp);
+  const hum = evaluateMetric("hum", state.latest.humidity, state.thresholds.hum);
   const severity = worstSeverity([temp.severity, hum.severity]);
 
   if (severity === "good") {

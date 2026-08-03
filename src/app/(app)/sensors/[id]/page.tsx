@@ -5,7 +5,7 @@ import { requestNow } from "@/lib/now";
 
 import { formatHumidity, formatTemp, relativeTimeParts } from "@/lib/format";
 import { summariseSensor } from "@/lib/sensor-status";
-import { DEFAULT_THRESHOLDS, type Reading } from "@/lib/types";
+import type { Reading } from "@/lib/types";
 import { ChartFrame } from "@/components/charts/chart-frame";
 import { TimeSeriesChart } from "@/components/charts/time-series";
 import { SegmentedLinks } from "@/components/layout/segmented-links";
@@ -48,6 +48,8 @@ export default async function SensorDetailPage({
   const points = downsample(history, 500);
 
   const summary = summariseSensor(state);
+  // The limits this sensor is actually judged against, not the global default.
+  const band = state.thresholds;
   const loc = (await locationsOf([state.sensor.roomId])).get(state.sensor.roomId) ?? {
     room: "",
     department: "",
@@ -104,13 +106,13 @@ export default async function SensorDetailPage({
           value={state.latest ? formatTemp(state.latest.tempC) : "—"}
           unit="°C"
           accent={summary.severity !== "good" && !summary.offline ? `var(--status-${summary.severity})` : undefined}
-          note={`${t("plan.norm")} ${DEFAULT_THRESHOLDS.temp.min}–${DEFAULT_THRESHOLDS.temp.max} °C`}
+          note={`${t("plan.norm")} ${band.temp.min}–${band.temp.max} °C`}
         />
         <Kpi
           label={t("sensors.humidity")}
           value={state.latest ? formatHumidity(state.latest.humidity) : "—"}
           unit="%"
-          note={`${t("plan.norm")} ${DEFAULT_THRESHOLDS.hum.min}–${DEFAULT_THRESHOLDS.hum.max} %`}
+          note={`${t("plan.norm")} ${band.hum.min}–${band.hum.max} %`}
         />
         <Kpi
           label={t("sensors.battery")}
@@ -158,7 +160,7 @@ export default async function SensorDetailPage({
         legend={[
           { label: state.sensor.name, color: "var(--series-1)" },
           {
-            label: `${t("plan.norm")} ${DEFAULT_THRESHOLDS.temp.min}–${DEFAULT_THRESHOLDS.temp.max} °C`,
+            label: `${t("plan.norm")} ${band.temp.min}–${band.temp.max} °C`,
             color: "color-mix(in srgb, var(--status-good) 45%, transparent)",
             block: true,
           },
@@ -183,7 +185,7 @@ export default async function SensorDetailPage({
             points={points}
             field="tempC"
             color="var(--series-1)"
-            band={{ min: DEFAULT_THRESHOLDS.temp.min, max: DEFAULT_THRESHOLDS.temp.max }}
+            band={{ min: band.temp.min, max: band.temp.max }}
             unit="°C"
             maxLabel={t("history.max")}
             minLabel={t("history.min")}
@@ -200,7 +202,7 @@ export default async function SensorDetailPage({
         legend={[
           { label: state.sensor.name, color: "var(--series-3)" },
           {
-            label: `${t("plan.norm")} ${DEFAULT_THRESHOLDS.hum.min}–${DEFAULT_THRESHOLDS.hum.max} %`,
+            label: `${t("plan.norm")} ${band.hum.min}–${band.hum.max} %`,
             color: "color-mix(in srgb, var(--status-good) 45%, transparent)",
             block: true,
           },
@@ -219,7 +221,7 @@ export default async function SensorDetailPage({
             points={points}
             field="humidity"
             color="var(--series-3)"
-            band={{ min: DEFAULT_THRESHOLDS.hum.min, max: DEFAULT_THRESHOLDS.hum.max }}
+            band={{ min: band.hum.min, max: band.hum.max }}
             unit="%"
             maxLabel={t("history.max")}
             minLabel={t("history.min")}

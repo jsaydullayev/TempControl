@@ -4,9 +4,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { formatHumidity, formatTemp } from "@/lib/format";
 import { summariseSensor } from "@/lib/sensor-status";
-import { evaluateMetric } from "@/lib/status";
 import type { SensorState } from "@/lib/types";
 import { FreeCanvas } from "@/components/building/free-canvas";
+
+/** Worst-first ordering, so the card shows the most serious sensor it holds. */
+const SEVERITY_RANK: Record<string, number> = { good: 0, warning: 1, serious: 2, critical: 3 };
 
 const DOT: Record<string, string> = {
   good: "var(--status-good)",
@@ -107,15 +109,28 @@ function EntryCard({ entry, labels }: { entry: Entry; labels: Labels }) {
   const avgTemp = live.length ? live.reduce((a, s) => a + s.latest!.tempC, 0) / live.length : null;
   const avgHum = live.length ? live.reduce((a, s) => a + s.latest!.humidity, 0) / live.length : null;
 
-  const status = avgTemp === null ? null : evaluateMetric("temp", avgTemp);
-  const breached = status !== null && status.direction !== null;
-  const kind = avgTemp === null ? "offline" : breached ? status!.severity : "good";
+  /*
+   * The card's colour comes from the WORST sensor inside it, not from the
+   * average temperature judged against one rule. A room can hold a fridge and
+   * a wall sensor with completely different limits, and their average obeys
+   * neither — it would have called a healthy pair "too cold".
+   */
+  const worst = entry.states
+    .map((state, i) => ({ state, summary: summaries[i] }))
+    .filter(({ summary }) => !summary.offline && summary.severity !== "good")
+    .sort((a, b) => SEVERITY_RANK[b.summary.severity] - SEVERITY_RANK[a.summary.severity])[0];
+
+  const anyOnline = live.length > 0;
+  const breached = Boolean(worst);
+  const kind = !anyOnline ? "offline" : worst ? worst.summary.severity : "good";
   const color = DOT[kind];
-  const breachLabel = !breached
+  const breachLabel = !worst
     ? null
-    : status!.direction === "below"
+    : worst.summary.labelKey === "tooCold"
       ? labels.tooCold
-      : labels.tooHot;
+      : worst.summary.labelKey === "tooHot"
+        ? labels.tooHot
+        : null;
 
   return (
     <div className="relative h-full w-full">

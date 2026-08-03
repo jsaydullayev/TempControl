@@ -67,6 +67,17 @@ export interface SensorState {
   lastSeen: number | null;
   /** recent points for the card sparkline, oldest first */
   spark: Reading[];
+  /**
+   * The limits THIS sensor is judged against — its own override, its
+   * building's rule, or the application default, already resolved.
+   *
+   * Carried on the state rather than looked up by each component: the status
+   * chip used to fall back to the application default, so a fridge configured
+   * for 2–8 °C was reported "too cold" at 5.9 °C while the alert engine, which
+   * did read the configured rule, stayed correctly silent. Two answers to the
+   * same question is worse than either answer alone.
+   */
+  thresholds: { temp: Threshold; hum: Threshold };
 }
 
 export interface Threshold {

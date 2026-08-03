@@ -8,9 +8,11 @@ import { departments, floors, readings, rooms, sensors } from "@/db/schema";
 import { isOffline } from "@/lib/status";
 import { requestNow } from "@/lib/now";
 import { isUuid } from "@/lib/uuid";
+import { DEFAULT_THRESHOLDS } from "@/lib/types";
 import type { Department, Floor, Reading, Room, Sensor, SensorState } from "@/lib/types";
 import { canSeeBuilding, type Session } from "@/server/auth/dal";
 import { readingsInRange } from "@/server/ingest/poll";
+import { rulesFor } from "@/server/alerts/rules";
 
 /**
  * Scoped reads. Every exported function takes a Session first — that is the
@@ -235,6 +237,19 @@ async function buildStates(rows: SensorRow[]): Promise<SensorState[]> {
   const now = requestNow();
   const ids = rows.map((r) => r.id);
 
+  // The same resolution the alert engine uses — sensor rule, then building
+  // rule, then application default — so the chip and the alert cannot disagree.
+  const rulesByBuilding = new Map<string, Awaited<ReturnType<typeof rulesFor>>>();
+  for (const buildingId of new Set(rows.map((r) => r.buildingId))) {
+    rulesByBuilding.set(
+      buildingId,
+      await rulesFor(
+        buildingId,
+        rows.filter((r) => r.buildingId === buildingId).map((r) => r.id),
+      ),
+    );
+  }
+
   const [latestRows, sparkRows] = await Promise.all([
     // Newest row per sensor — DISTINCT ON is the cheap way to do this in Postgres.
     db
@@ -312,9 +327,25 @@ async function buildStates(rows: SensorRow[]): Promise<SensorState[]> {
      */
     const contactAt = row.lastSeenAt?.getTime() ?? reading?.ts ?? null;
 
+    const rule = rulesByBuilding.get(row.buildingId)?.get(row.id);
+
     return {
       sensor,
       latest: reading,
+      thresholds: {
+        temp: {
+          metric: "temp" as const,
+          min: rule?.temp.min ?? DEFAULT_THRESHOLDS.temp.min,
+          max: rule?.temp.max ?? DEFAULT_THRESHOLDS.temp.max,
+          hysteresis: 0,
+        },
+        hum: {
+          metric: "hum" as const,
+          min: rule?.hum.min ?? DEFAULT_THRESHOLDS.hum.min,
+          max: rule?.hum.max ?? DEFAULT_THRESHOLDS.hum.max,
+          hysteresis: 0,
+        },
+      },
       lastSeen: contactAt,
       isOnline: !isOffline(contactAt, now),
       spark: spark.get(row.id) ?? [],

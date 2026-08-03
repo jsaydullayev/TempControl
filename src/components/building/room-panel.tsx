@@ -36,6 +36,11 @@ export async function RoomPanel({ room, states, breadcrumb }: Props) {
   const temp = avg((s) => s.latest!.tempC);
   const hum = avg((s) => s.latest!.humidity);
 
+  // Every sensor in a room normally shares one rule; when they do not, showing
+  // the first one's limits is still truer than showing the global default.
+  const first = states[0];
+  const band = first?.thresholds ?? DEFAULT_THRESHOLDS;
+
   return (
     <aside
       className="flex w-full shrink-0 flex-col gap-4 rounded-xl p-4 lg:w-[320px]"
@@ -66,13 +71,13 @@ export async function RoomPanel({ room, states, breadcrumb }: Props) {
           label={t("sensors.temperature")}
           value={temp === null ? "—" : formatTemp(temp)}
           unit="°C"
-          norm={`${t("plan.norm")} ${DEFAULT_THRESHOLDS.temp.min}–${DEFAULT_THRESHOLDS.temp.max} °C`}
+          norm={`${t("plan.norm")} ${band.temp.min}–${band.temp.max} °C`}
         />
         <Metric
           label={t("sensors.humidity")}
           value={hum === null ? "—" : formatHumidity(hum)}
           unit="%"
-          norm={`${t("plan.norm")} ${DEFAULT_THRESHOLDS.hum.min}–${DEFAULT_THRESHOLDS.hum.max} %`}
+          norm={`${t("plan.norm")} ${band.hum.min}–${band.hum.max} %`}
         />
       </div>
 
