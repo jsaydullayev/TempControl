@@ -92,10 +92,10 @@
     "critical": "Critical",
     "offline": "Offline",
     "lowBattery": "Low battery",
-    "tooCold": "Too cold",
-    "tooHot": "Too hot",
-    "tooDry": "Too dry",
-    "tooHumid": "Too humid"
+    "tooCold": "Cold",
+    "tooHot": "Hot",
+    "tooDry": "Dry",
+    "tooHumid": "Humid"
   },
   "time": {
     "justNow": "just now",

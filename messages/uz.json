@@ -92,10 +92,10 @@
     "critical": "Kritik",
     "offline": "Aloqa yo'q",
     "lowBattery": "Batareya kam",
-    "tooCold": "Juda sovuq",
-    "tooHot": "Juda issiq",
-    "tooDry": "Juda quruq",
-    "tooHumid": "Juda nam"
+    "tooCold": "Sovuq",
+    "tooHot": "Issiq",
+    "tooDry": "Quruq",
+    "tooHumid": "Nam"
   },
   "time": {
     "justNow": "hozirgina",

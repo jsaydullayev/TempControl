@@ -92,10 +92,10 @@
     "critical": "Критично",
     "offline": "Нет связи",
     "lowBattery": "Низкий заряд",
-    "tooCold": "Слишком холодно",
-    "tooHot": "Слишком жарко",
-    "tooDry": "Слишком сухо",
-    "tooHumid": "Слишком влажно"
+    "tooCold": "Холодно",
+    "tooHot": "Жарко",
+    "tooDry": "Сухо",
+    "tooHumid": "Влажно"
   },
   "time": {
     "justNow": "только что",
