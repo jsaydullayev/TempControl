@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { LineChart } from "lucide-react";
+import Link from "next/link";
+import { FileDown, LineChart } from "lucide-react";
 import { requestNow } from "@/lib/now";
 
 import { formatHumidity, formatTemp } from "@/lib/format";
@@ -104,12 +105,23 @@ export default async function HistoryPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        eyebrow={building?.name ?? ""}
-        title={t("nav.history")}
-        backHref="/"
-        backLabel={t("common.back")}
-      />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <PageHeader
+          eyebrow={building?.name ?? ""}
+          title={t("nav.history")}
+          backHref="/"
+          backLabel={t("common.back")}
+        />
+        {/* The printable twin of this page: same data, one sheet, all sensors. */}
+        <Link
+          href="/report"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium"
+          style={{ border: "1px solid var(--hairline)", color: "var(--ink-secondary)" }}
+        >
+          <FileDown size={15} aria-hidden />
+          {t("report.open")}
+        </Link>
+      </div>
 
       {/* One filter row above everything it scopes. */}
       <div className="flex flex-col gap-3">

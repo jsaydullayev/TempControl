@@ -166,3 +166,69 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Print: the monitoring report, on one landscape sheet ──────────────────
+   The screen is a dark dashboard; paper is white and often black-and-white.
+   Colours are forced to ink so a breach stays legible after photocopying —
+   the ▲ / ▼ markers carry the same meaning without any colour at all. */
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@media print {
+  :root,
+  :root[data-theme="dark"] {
+    --plane: #fff;
+    --surface-1: #fff;
+    --surface-2: #fff;
+    --paper: #fff;
+    --ink-primary: #000;
+    --ink-secondary: #222;
+    --ink-muted: #555;
+    --hairline: #bbb;
+    --status-critical: #000;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* The shell is navigation, not content. */
+  header,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* Shrink to fit rather than spill onto a second sheet. */
+  table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  th,
+  td {
+    border: 0.4pt solid #bbb;
+    padding: 1pt 1.5pt !important;
+    overflow: hidden;
+  }
+
+  /* The first two columns carry text and need room; the data columns are
+     numbers and share what is left evenly. */
+  thead th:first-child {
+    width: 26mm;
+  }
+  thead th:nth-child(2) {
+    width: 11mm;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+}

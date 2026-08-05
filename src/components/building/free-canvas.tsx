@@ -344,10 +344,23 @@ export function FreeCanvas({
                   }
                 }
               }}
-              className={`absolute touch-none ${
+              className={`absolute ${
                 editable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
               }`}
               style={{
+                /*
+                 * Scrolling wins over dragging on a touch screen.
+                 *
+                 * This was `touch-action: none` for every card, including for
+                 * viewers who cannot drag at all — and on a phone the canvas is
+                 * a column of full-width cards, so a finger almost always lands
+                 * on one and the page simply refused to scroll.
+                 *
+                 * `pan-y` keeps vertical scrolling with the browser and leaves
+                 * horizontal movement to the drag handler; a mouse is unaffected
+                 * either way.
+                 */
+                touchAction: editable ? "pan-y" : "auto",
                 left: `${pos.x}%`,
                 top: `${pos.y}%`,
                 width: `min(${CARD_PX_W}px, 100%)`,
