@@ -244,6 +244,8 @@
     "printedAt": "tayyorlandi",
     "legend": "Katakda eng past–eng yuqori harorat (°C). ▲ chegaradan yuqori, ▼ chegaradan past, · ma'lumot yo'q.",
     "breachedSensors": "{count} ta datchik chegaradan chiqqan",
-    "open": "Hisobot"
+    "open": "Hisobot",
+    "charts": "Grafik ko'rinish",
+    "chartsLegend": "Har panelda o'sha davrdagi eng past va eng yuqori harorat oralig'i. Yashil yo'lak — belgilangan chegara; qizil — chegaradan chiqqan davr."
   }
 }

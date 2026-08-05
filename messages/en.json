@@ -244,6 +244,8 @@
     "printedAt": "generated",
     "legend": "Each cell shows the min–max temperature (°C). ▲ above the limit, ▼ below it, · no data.",
     "breachedSensors": "{count} sensor(s) went outside their limits",
-    "open": "Report"
+    "open": "Report",
+    "charts": "Charts",
+    "chartsLegend": "Each panel shows the min–max temperature range for the period. The green band is the configured limit; red marks a period that left it."
   }
 }

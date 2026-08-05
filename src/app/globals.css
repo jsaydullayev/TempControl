@@ -231,4 +231,14 @@ body {
   tr {
     break-inside: avoid;
   }
+
+  /* Sheet 2 starts on its own page, and a chart panel is never split across
+     the fold — half a range polygon says nothing. */
+  .break-before-page {
+    break-before: page;
+  }
+
+  figure {
+    break-inside: avoid;
+  }
 }

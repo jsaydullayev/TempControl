@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requestNow } from "@/lib/now";
 import { NoBuildings } from "@/components/layout/no-buildings";
 import { PageHeader } from "@/components/layout/page-header";
+import { MiniChart } from "@/components/report/mini-chart";
 import { PrintButton } from "@/components/report/print-button";
 import { SegmentedLinks } from "@/components/layout/segmented-links";
 import { requireSession, visibleBuildings } from "@/server/auth/dal";
@@ -149,6 +150,22 @@ export default async function ReportPage({
       <p className="text-xs print:text-[7pt]" style={{ color: "var(--ink-muted)" }}>
         {t("report.legend")} · {t("report.breachedSensors", { count: breached })}
       </p>
+
+      {/* Sheet 2: the same buckets drawn, one panel per sensor. The table
+          answers "what were the numbers"; this answers "what did it do". */}
+      {report.rows.length > 0 ? (
+        <section className="flex flex-col gap-3 break-before-page">
+          <h2 className="text-sm font-medium print:text-[9pt]">{t("report.charts")}</h2>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3 print:grid-cols-4">
+            {report.rows.map((row) => (
+              <MiniChart key={row.sensorId} row={row} label={t("common.noData")} />
+            ))}
+          </div>
+          <p className="text-xs print:text-[7pt]" style={{ color: "var(--ink-muted)" }}>
+            {t("report.chartsLegend")}
+          </p>
+        </section>
+      ) : null}
     </div>
   );
 }
