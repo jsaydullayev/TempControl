@@ -49,8 +49,22 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
 }
 
+/**
+ * Slack for the "exactly adjacent" case.
+ *
+ * Grid neighbours are placed at precisely one card plus one gap apart, and the
+ * test below is a strict `<`. In percent arithmetic that sum lands a hair under
+ * itself often enough to matter: two perfectly tidy neighbours read as a
+ * collision and get spiralled apart, which is the untidiness this grid exists
+ * to remove. A hundredth of a percent is well under a pixel on any screen.
+ */
+const TOUCH_EPSILON = 0.01;
+
 function overlaps(a: Pos, b: Pos, d: Dims): boolean {
-  return Math.abs(a.x - b.x) < d.cardW + d.gapX && Math.abs(a.y - b.y) < d.cardH + d.gapY;
+  return (
+    Math.abs(a.x - b.x) < d.cardW + d.gapX - TOUCH_EPSILON &&
+    Math.abs(a.y - b.y) < d.cardH + d.gapY - TOUCH_EPSILON
+  );
 }
 
 /** `want` if it is clear, otherwise the closest point that clears everything placed. */
@@ -157,13 +171,29 @@ export function FreeCanvas({
     setSaved(loadLayout(storageKey) ?? {});
   }, [storageKey]);
 
-  /** Effective positions: every card placed, none overlapping. */
+  /**
+   * Effective positions: every card placed, none overlapping.
+   *
+   * A card with no saved position lands on a GRID — the same column count the
+   * canvas height is sized for. It used to fall back to a single column, which
+   * meant that past the fifth or sixth card `nearestClear` had to spiral each
+   * new one into whatever hole it could find. With four cards that reads as a
+   * layout; with twelve it reads as spilled cards.
+   *
+   * Dragging still overrides any of it: a saved position is honoured, and only
+   * a genuine collision moves it.
+   */
   const layout = useMemo(() => {
     const placed: Record<string, Pos> = {};
     const taken: Pos[] = [];
 
+    const columns = Math.max(1, Math.floor((100 - dims.gapX) / (dims.cardW + dims.gapX)));
+
     items.forEach((item, i) => {
-      const fallback = { x: dims.gapX, y: dims.gapY + i * (dims.cardH + dims.gapY) };
+      const fallback = {
+        x: dims.gapX + (i % columns) * (dims.cardW + dims.gapX),
+        y: dims.gapY + Math.floor(i / columns) * (dims.cardH + dims.gapY),
+      };
       const pos = nearestClear(saved[item.id] ?? fallback, taken, dims);
       placed[item.id] = pos;
       taken.push(pos);

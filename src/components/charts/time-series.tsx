@@ -1,5 +1,7 @@
 import type { Reading } from "@/lib/types";
 
+import { formatTick, niceTicks } from "@/components/charts/axis";
+
 interface Props {
   points: Reading[];
   field: "tempC" | "humidity";
@@ -22,7 +24,7 @@ interface Props {
 
 const W = 900;
 const H = 260;
-const PAD = { top: 16, right: 64, bottom: 26, left: 8 };
+const PAD = { top: 16, right: 64, bottom: 26, left: 40 };
 
 /**
  * Time series with a comfort band.
@@ -78,6 +80,8 @@ export function TimeSeriesChart({
   });
   if (current.length > 1) runs.push(current.join(" "));
 
+  const yTicks = niceTicks(yMin, yMax);
+
   const bandTop = band ? y(band.max) : 0;
   const bandBottom = band ? y(band.min) : 0;
 
@@ -89,6 +93,35 @@ export function TimeSeriesChart({
       aria-label={ariaLabel}
       style={{ display: "block" }}
     >
+      {/* Y-axis: hairline gridlines one shade off the surface, values at the
+          left in muted ink. Solid, never dashed — a dashed rule reads as a
+          threshold, and this chart already has a real one. */}
+      {yTicks.map((v) => {
+        const yy = y(v);
+        return (
+          <g key={v}>
+            <line
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={yy}
+              y2={yy}
+              stroke="var(--hairline)"
+              strokeWidth={1}
+            />
+            <text
+              x={PAD.left - 6}
+              y={yy + 3.5}
+              fontSize={10}
+              textAnchor="end"
+              fill="var(--ink-muted)"
+              className="tnum"
+            >
+              {formatTick(v)}
+            </text>
+          </g>
+        );
+      })}
+
       {/* Comfort band — a quiet wash, not a saturated block. */}
       {band ? (
         <rect
