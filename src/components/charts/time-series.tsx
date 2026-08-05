@@ -4,8 +4,12 @@ interface Props {
   points: Reading[];
   field: "tempC" | "humidity";
   color: string;
-  /** Comfort band drawn behind the line. */
-  band: { min: number; max: number };
+  /**
+   * Comfort band drawn behind the line, or null when the compared sensors do
+   * not share one — a single band over series with different limits would
+   * declare readings safe or unsafe by a rule that applies to none of them.
+   */
+  band: { min: number; max: number } | null;
   unit: string;
   maxLabel: string;
   minLabel: string;
@@ -47,8 +51,8 @@ export function TimeSeriesChart({
   }
 
   const values = points.map((p) => p[field]);
-  const lo = Math.min(...values, band.min);
-  const hi = Math.max(...values, band.max);
+  const lo = Math.min(...values, ...(band ? [band.min] : []));
+  const hi = Math.max(...values, ...(band ? [band.max] : []));
   const pad = (hi - lo) * 0.15 || 1;
   const yMin = lo - pad;
   const yMax = hi + pad;
@@ -74,8 +78,8 @@ export function TimeSeriesChart({
   });
   if (current.length > 1) runs.push(current.join(" "));
 
-  const bandTop = y(band.max);
-  const bandBottom = y(band.min);
+  const bandTop = band ? y(band.max) : 0;
+  const bandBottom = band ? y(band.min) : 0;
 
   return (
     <svg
@@ -86,14 +90,16 @@ export function TimeSeriesChart({
       style={{ display: "block" }}
     >
       {/* Comfort band — a quiet wash, not a saturated block. */}
-      <rect
-        x={PAD.left}
-        y={bandTop}
-        width={W - PAD.left - PAD.right}
-        height={Math.max(0, bandBottom - bandTop)}
-        fill="color-mix(in srgb, var(--status-good) 12%, transparent)"
-      />
-      {[bandTop, bandBottom].map((yy, i) => (
+      {band ? (
+        <rect
+          x={PAD.left}
+          y={bandTop}
+          width={W - PAD.left - PAD.right}
+          height={Math.max(0, bandBottom - bandTop)}
+          fill="color-mix(in srgb, var(--status-good) 12%, transparent)"
+        />
+      ) : null}
+      {(band ? [bandTop, bandBottom] : []).map((yy, i) => (
         <line
           key={i}
           x1={PAD.left}
@@ -106,24 +112,28 @@ export function TimeSeriesChart({
       ))}
 
       {/* Threshold values live at the edge as text, so the band never needs decoding. */}
-      <text
-        x={W - PAD.right + 8}
-        y={bandTop + 4}
-        fontSize={11}
-        fill="var(--ink-muted)"
-        className="tnum"
-      >
-        {band.max} {unit} {maxLabel}
-      </text>
-      <text
-        x={W - PAD.right + 8}
-        y={bandBottom + 4}
-        fontSize={11}
-        fill="var(--ink-muted)"
-        className="tnum"
-      >
-        {band.min} {unit} {minLabel}
-      </text>
+      {band ? (
+        <>
+          <text
+            x={W - PAD.right + 8}
+            y={bandTop + 4}
+            fontSize={11}
+            fill="var(--ink-muted)"
+            className="tnum"
+          >
+            {band.max} {unit} {maxLabel}
+          </text>
+          <text
+            x={W - PAD.right + 8}
+            y={bandBottom + 4}
+            fontSize={11}
+            fill="var(--ink-muted)"
+            className="tnum"
+          >
+            {band.min} {unit} {minLabel}
+          </text>
+        </>
+      ) : null}
 
       {/* Hairline baseline; no dashed grid. */}
       <line

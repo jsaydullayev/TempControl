@@ -127,7 +127,9 @@
     "max": "max",
     "min": "min",
     "maxSeries": "At most {count} sensors — more than that cannot be told apart by colour.",
-    "empty": "No readings in this range. Pick another period, or check that the poller is running."
+    "empty": "No readings in this range. Pick another period, or check that the poller is running.",
+    "mixedLimits": "The selected sensors have different limits, so no shared band is drawn. Each row in the table is marked against its own.",
+    "outOfRange": "▲ above the limit, ▼ below it"
   },
   "admin": {
     "structure": "Building structure",

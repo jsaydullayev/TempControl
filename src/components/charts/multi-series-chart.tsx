@@ -10,7 +10,12 @@ export interface Series {
 interface Props {
   series: Series[];
   field: "tempC" | "humidity";
-  band: { min: number; max: number };
+  /**
+   * The shared comfort band, or null when the compared sensors obey different
+   * limits — one band over a fridge and a room would mark the fridge's normal
+   * readings as a breach.
+   */
+  band: { min: number; max: number } | null;
   unit: string;
   maxLabel: string;
   minLabel: string;
@@ -45,8 +50,8 @@ export function MultiSeriesChart({
   if (withData.length === 0) return null;
 
   const allValues = withData.flatMap((s) => s.points.map((p) => p[field]));
-  const lo = Math.min(...allValues, band.min);
-  const hi = Math.max(...allValues, band.max);
+  const lo = Math.min(...allValues, ...(band ? [band.min] : []));
+  const hi = Math.max(...allValues, ...(band ? [band.max] : []));
   const pad = (hi - lo) * 0.15 || 1;
   const yMin = lo - pad;
   const yMax = hi + pad;
@@ -59,8 +64,8 @@ export function MultiSeriesChart({
   const x = (ts: number) => PAD.left + ((ts - t0) / tSpan) * (W - PAD.left - PAD.right);
   const y = (v: number) => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * (H - PAD.top - PAD.bottom);
 
-  const bandTop = y(band.max);
-  const bandBottom = y(band.min);
+  const bandTop = band ? y(band.max) : 0;
+  const bandBottom = band ? y(band.min) : 0;
 
   return (
     <svg
@@ -70,31 +75,35 @@ export function MultiSeriesChart({
       aria-label={ariaLabel}
       style={{ display: "block" }}
     >
-      <rect
-        x={PAD.left}
-        y={bandTop}
-        width={W - PAD.left - PAD.right}
-        height={Math.max(0, bandBottom - bandTop)}
-        fill="color-mix(in srgb, var(--status-good) 10%, transparent)"
-      />
-      {[bandTop, bandBottom].map((yy, i) => (
-        <line
-          key={i}
-          x1={PAD.left}
-          x2={W - PAD.right}
-          y1={yy}
-          y2={yy}
-          stroke="color-mix(in srgb, var(--status-good) 40%, transparent)"
-          strokeWidth={1}
-        />
-      ))}
+      {band ? (
+        <>
+          <rect
+            x={PAD.left}
+            y={bandTop}
+            width={W - PAD.left - PAD.right}
+            height={Math.max(0, bandBottom - bandTop)}
+            fill="color-mix(in srgb, var(--status-good) 10%, transparent)"
+          />
+          {[bandTop, bandBottom].map((yy, i) => (
+            <line
+              key={i}
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={yy}
+              y2={yy}
+              stroke="color-mix(in srgb, var(--status-good) 40%, transparent)"
+              strokeWidth={1}
+            />
+          ))}
 
-      <text x={W - PAD.right + 8} y={bandTop + 4} fontSize={11} fill="var(--ink-muted)" className="tnum">
-        {band.max} {unit} {maxLabel}
-      </text>
-      <text x={W - PAD.right + 8} y={bandBottom + 4} fontSize={11} fill="var(--ink-muted)" className="tnum">
-        {band.min} {unit} {minLabel}
-      </text>
+          <text x={W - PAD.right + 8} y={bandTop + 4} fontSize={11} fill="var(--ink-muted)" className="tnum">
+            {band.max} {unit} {maxLabel}
+          </text>
+          <text x={W - PAD.right + 8} y={bandBottom + 4} fontSize={11} fill="var(--ink-muted)" className="tnum">
+            {band.min} {unit} {minLabel}
+          </text>
+        </>
+      ) : null}
 
       <line
         x1={PAD.left}

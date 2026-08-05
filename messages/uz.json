@@ -127,7 +127,9 @@
     "max": "maks",
     "min": "min",
     "maxSeries": "Ko‘pi bilan {count} ta sensor solishtiriladi — ortig‘i rangdan ajratib bo‘lmaydi.",
-    "empty": "Tanlangan oraliqda o‘lchov yo‘q. Boshqa davrni tanlang yoki poller ishlayotganini tekshiring."
+    "empty": "Tanlangan oraliqda o‘lchov yo‘q. Boshqa davrni tanlang yoki poller ishlayotganini tekshiring.",
+    "mixedLimits": "Tanlangan datchiklarning chegaralari har xil — umumiy yashil yo'lak ko'rsatilmadi. Jadvalda har datchik o'z chegarasi bo'yicha belgilangan.",
+    "outOfRange": "▲ chegaradan yuqori, ▼ chegaradan past"
   },
   "admin": {
     "structure": "Bino tuzilishi",

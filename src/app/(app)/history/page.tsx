@@ -5,6 +5,7 @@ import { requestNow } from "@/lib/now";
 
 import { formatHumidity, formatTemp } from "@/lib/format";
 import { DEFAULT_THRESHOLDS } from "@/lib/types";
+import { rulesFor } from "@/server/alerts/rules";
 import { MultiSeriesChart, type Series } from "@/components/charts/multi-series-chart";
 import { NoBuildings } from "@/components/layout/no-buildings";
 import { PageHeader } from "@/components/layout/page-header";
@@ -90,6 +91,35 @@ export default async function HistoryPage({
     color: SERIES_COLORS[i],
     points: points.get(id) ?? [],
   }));
+
+  /*
+   * The limits the ADMIN configured, resolved exactly as the alert engine does.
+   *
+   * A single band can only be drawn when every compared sensor obeys the same
+   * rule. Comparing a fridge at 2–8 with a room at 18–26 under one band would
+   * paint the fridge's normal readings as a breach — so when they differ the
+   * band is dropped and the table carries the judgement instead, per row.
+   */
+  const rules = await rulesFor(buildingId, active);
+  const key = (m: "temp" | "hum") =>
+    active.map((id) => {
+      const r = rules.get(id);
+      return r ? `${r[m].min}-${r[m].max}` : "";
+    });
+  const shared = (m: "temp" | "hum") => new Set(key(m)).size === 1;
+
+  /** Each row is judged by ITS OWN rule, even when the chart shows no band. */
+  const limitOf = (sensorId: string, metric: "temp" | "hum") => {
+    const r = rules.get(sensorId);
+    return r
+      ? { min: r[metric].min, max: r[metric].max }
+      : { min: DEFAULT_THRESHOLDS[metric].min, max: DEFAULT_THRESHOLDS[metric].max };
+  };
+
+  const first = rules.get(active[0]);
+  const tempBand = shared("temp") && first ? { min: first.temp.min, max: first.temp.max } : null;
+  const humBand = shared("hum") && first ? { min: first.hum.min, max: first.hum.max } : null;
+  const mixedLimits = !shared("temp") || !shared("hum");
 
   const ticks = tickMarks(series, cfg.ticks, locale, range);
   const hasData = series.some((s) => s.points.length >= 2);
@@ -193,11 +223,17 @@ export default async function HistoryPage({
         </div>
       ) : (
         <>
+          {mixedLimits ? (
+            <p className="text-xs" style={{ color: "var(--ink-muted)" }}>
+              {t("history.mixedLimits")}
+            </p>
+          ) : null}
+
           <Frame title={t("history.tempTitle")} series={series}>
             <MultiSeriesChart
               series={series}
               field="tempC"
-              band={{ min: DEFAULT_THRESHOLDS.temp.min, max: DEFAULT_THRESHOLDS.temp.max }}
+              band={tempBand}
               unit="°C"
               maxLabel={t("history.max")}
               minLabel={t("history.min")}
@@ -212,7 +248,7 @@ export default async function HistoryPage({
             <MultiSeriesChart
               series={series}
               field="humidity"
-              band={{ min: DEFAULT_THRESHOLDS.hum.min, max: DEFAULT_THRESHOLDS.hum.max }}
+              band={humBand}
               unit="%"
               maxLabel={t("history.max")}
               minLabel={t("history.min")}
@@ -257,25 +293,58 @@ export default async function HistoryPage({
                         {row.name || nameOf.get(row.sensorId)}
                       </span>
                     </td>
-                    <Num v={row.tempMin} fmt={formatTemp} />
+                    <Num v={row.tempMin} fmt={formatTemp} low={limitOf(row.sensorId, "temp").min} />
                     <Num v={row.tempAvg} fmt={formatTemp} />
-                    <Num v={row.tempMax} fmt={formatTemp} />
-                    <Num v={row.humMin} fmt={formatHumidity} />
+                    <Num v={row.tempMax} fmt={formatTemp} high={limitOf(row.sensorId, "temp").max} />
+                    <Num v={row.humMin} fmt={formatHumidity} low={limitOf(row.sensorId, "hum").min} />
                     <Num v={row.humAvg} fmt={formatHumidity} />
-                    <Num v={row.humMax} fmt={formatHumidity} />
+                    <Num v={row.humMax} fmt={formatHumidity} high={limitOf(row.sensorId, "hum").max} />
                   </tr>
                 ))}
               </tbody>
             </table>
           </section>
+
+          <p className="text-xs" style={{ color: "var(--ink-muted)" }}>
+            {t("history.outOfRange")}
+          </p>
         </>
       )}
     </div>
   );
 }
 
-function Num({ v, fmt }: { v: number | null; fmt: (n: number) => string }) {
-  return <td className="tnum px-4 py-3 text-right">{v === null ? "—" : fmt(v)}</td>;
+/**
+ * Marks a value that left its limits.
+ *
+ * Colour is doubled by the ▼ / ▲ arrow: the same table is printed, read on a
+ * phone in daylight and looked at by people who do not separate red from grey.
+ */
+function Num({
+  v,
+  fmt,
+  low,
+  high,
+}: {
+  v: number | null;
+  fmt: (n: number) => string;
+  /** Breach when the value falls below this. */
+  low?: number;
+  /** Breach when the value rises above this. */
+  high?: number;
+}) {
+  const bad =
+    v !== null && ((low !== undefined && v < low) || (high !== undefined && v > high));
+
+  return (
+    <td
+      className="tnum px-4 py-3 text-right"
+      style={bad ? { color: "var(--status-critical)", fontWeight: 600 } : undefined}
+    >
+      {bad ? (low !== undefined ? "▼ " : "▲ ") : ""}
+      {v === null ? "—" : fmt(v)}
+    </td>
+  );
 }
 
 /** Chart container with the legend — identity is never colour alone. */
